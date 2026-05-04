@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Recipe Library</title>
+<style>
+:root{
+  --bg:#f9f7f4;--card:#fff;--accent1:#e8824a;--accent2:#3d7ebf;
+  --text:#1a1a1a;--muted:#6b6b6b;--border:#e5e0d8;--green:#4caf7d;--tag-bg:#f0ede8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── LIBRARY VIEW ── */
+.library-header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#fff;padding:48px 32px 36px;text-align:center;}
+.library-header .eyebrow{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;}
+.library-header h1{font-size:clamp(24px,5vw,36px);font-weight:700;letter-spacing:-.5px;}
+.library-header p{margin-top:8px;font-size:14px;color:rgba(255,255,255,.55);}
+.search-wrap{max-width:460px;margin:22px auto 0;position:relative;}
+.search-wrap input{width:100%;padding:12px 16px 12px 42px;border-radius:12px;border:none;font-size:14px;background:rgba(255,255,255,.12);color:#fff;outline:none;backdrop-filter:blur(4px);}
+.search-wrap input::placeholder{color:rgba(255,255,255,.4);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.5;}
+
+.filter-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:20px 20px 4px;}
+.filter-btn{padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .18s;}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;padding:16px 24px 48px;max-width:1100px;margin:0 auto;}
+
+.recipe-card{background:var(--card);border-radius:18px;border:1px solid var(--border);cursor:pointer;transition:transform .18s,box-shadow .18s;overflow:hidden;}
+.recipe-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.09);}
+.card-thumb{height:140px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;}
+.card-meal-badge{position:absolute;top:12px;left:12px;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;padding:3px 9px;border-radius:4px;}
+.card-meal-badge.lunch{background:#fff3ea;color:var(--accent1);}
+.card-meal-badge.dinner{background:#eaf2fb;color:var(--accent2);}
+.card-body{padding:16px 18px 18px;}
+.card-body h3{font-size:16px;font-weight:700;margin-bottom:5px;line-height:1.3;}
+.card-body p{font-size:13px;color:var(--muted);line-height:1.45;margin-bottom:14px;}
+.card-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.card-stat{font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:var(--tag-bg);color:var(--muted);}
+.card-stat.hi{color:var(--green);}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.card-tag{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--tag-bg);color:var(--muted);font-weight:500;}
+
+/* ── DETAIL VIEW ── */
+.detail-view{display:none;max-width:700px;margin:0 auto;padding:0 0 80px;}
+.detail-view.open{display:block;}
+
+.back-btn{display:flex;align-items:center;gap:8px;padding:18px 20px 0;background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);transition:color .15s;}
+.back-btn:hover{color:var(--text);}
+
+.hero-card{background:var(--card);border-radius:20px;padding:28px;border:1px solid var(--border);margin:16px 20px 16px;}
+.meal-badge{display:inline-block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:4px 10px;border-radius:4px;margin-bottom:12px;}
+.meal-badge.lunch{background:#fff3ea;color:var(--accent1);}
+.meal-badge.dinner{background:#eaf2fb;color:var(--accent2);}
+.hero-card h2{font-size:clamp(20px,4vw,26px);font-weight:700;letter-spacing:-.3px;margin-bottom:8px;}
+.hero-card .desc{color:var(--muted);font-size:15px;line-height:1.55;margin-bottom:20px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+.stat{text-align:center;background:var(--tag-bg);border-radius:12px;padding:12px 8px;}
+.stat .val{font-size:20px;font-weight:700;}
+.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+.stat.protein .val{color:#c0392b;}
+.stat.fiber .val{color:var(--green);}
+.stat.kcal .val{color:#e67e22;}
+.stat.time .val{color:var(--accent2);}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.meta-tag{background:var(--tag-bg);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-weight:500;}
+
+.section-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:22px;margin:0 20px 16px;}
+.section-card h3{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.servings-control{display:flex;align-items:center;gap:14px;margin-bottom:20px;background:var(--tag-bg);border-radius:12px;padding:12px 16px;}
+.servings-control label{font-size:14px;font-weight:600;flex:1;}
+.servings-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--card);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:transform .1s;line-height:1;}
+.servings-btn:hover{transform:scale(1.1);}
+.servings-count{font-size:18px;font-weight:700;min-width:20px;text-align:center;}
+.ingredient-list{list-style:none;}
+.ingredient-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:15px;}
+.ingredient-item:last-child{border-bottom:none;}
+.ingredient-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;}
+.ingredient-item.checked .ingredient-name{text-decoration:line-through;color:var(--muted);}
+.ingredient-amount{font-weight:600;min-width:90px;}
+.ingredient-name{flex:1;}
+.ingredient-cat{font-size:10px;background:var(--tag-bg);padding:2px 7px;border-radius:4px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.steps-list{list-style:none;}
+.step{display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.lunch-detail .step-num{background:#fff3ea;color:var(--accent1);}
+.dinner-detail .step-num{background:#eaf2fb;color:var(--accent2);}
+.step-text{font-size:15px;line-height:1.6;}
+.step-tip{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);background:var(--tag-bg);padding:3px 10px;border-radius:4px;}
+.prep-tip-list{list-style:none;}
+.prep-tip-item{display:flex;gap:10px;padding:8px 0;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);}
+.prep-tip-item:last-child{border-bottom:none;}
+.prep-tip-item::before{content:"💡";flex-shrink:0;}
+.progress-bar-wrap{margin-top:10px;background:var(--border);border-radius:4px;height:6px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:4px;background:var(--green);transition:width .3s;}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+
+@media(max-width:500px){
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .hero-card h2{font-size:20px;}
+  .recipe-grid{padding:12px 14px 48px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LIBRARY VIEW ═══════════ -->
+<div id="library-view">
+  <div class="library-header">
+    <div class="eyebrow">Recipe Library</div>
+    <h1>🍽️ My Meal Prep Recipes</h1>
+    <p>High protein · High fiber · Batch-cook ready</p>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search recipes…" oninput="filterRecipes()"/>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('lunch',this)">☀️ Lunch</button>
+    <button class="filter-btn" onclick="setFilter('dinner',this)">🌙 Dinner</button>
+    <button class="filter-btn" onclick="setFilter('chicken',this)">🐔 Chicken</button>
+    <button class="filter-btn" onclick="setFilter('fish',this)">🐟 Fish</button>
+    <button class="filter-btn" onclick="setFilter('beef',this)">🥩 Beef</button>
+  </div>
+
+  <div class="recipe-grid" id="recipe-grid"></div>
+</div>
+
+<!-- ═══════════ DETAIL VIEW ═══════════ -->
+<div id="detail-view" class="detail-view">
+  <button class="back-btn" onclick="showLibrary()">← Back to library</button>
+  <div id="detail-content"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// RECIPE DATA
+// The scheduled task appends new recipe objects here each week.
+// To add manually: copy the object schema and append before the closing ];
+// ═══════════════════════════════════════════════════════════
+const RECIPES = [
+  {
+    id: "chipotle-chicken",
+    name: "Chipotle Chicken Grain Bowl",
+    meal: "lunch",
+    emoji: "🌮",
+    thumbBg: "#fff3ea",
+    description: "Southwest-inspired shredded rotisserie chicken over hearty farro with black beans, corn, and bold chipotle flavor.",
+    tags: ["Southwest","Black Beans","Farro","Meal Prep","chicken"],
+    calories: 450, protein: 38, fiber: 12, time: "10m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Rotisserie chicken, shredded",         amount:4,    unit:"oz",    category:"Protein" },
+      { name:"Cooked farro",                         amount:0.5,  unit:"cup",   category:"Grain"   },
+      { name:"Canned black beans, drained & rinsed", amount:0.5,  unit:"cup",   category:"Legume"  },
+      { name:"Corn kernels (canned or frozen)",      amount:0.25, unit:"cup",   category:"Veg"     },
+      { name:"Chipotle peppers in adobo, minced",    amount:1,    unit:"tbsp",  category:"Flavor"  },
+      { name:"Pickled jalapeños",                    amount:2,    unit:"tbsp",  category:"Flavor"  },
+      { name:"Cotija cheese, crumbled",              amount:2,    unit:"tbsp",  category:"Dairy"   },
+      { name:"Sour cream or Greek yogurt",           amount:1,    unit:"tbsp",  category:"Dairy"   },
+      { name:"Lime",                                 amount:1,    unit:"",      category:"Flavor"  },
+      { name:"Fresh cilantro, chopped",              amount:1,    unit:"tbsp",  category:"Herb"    },
+      { name:"Salt and black pepper",                amount:1,    unit:"pinch", category:"Pantry"  },
+    ],
+    steps: [
+      { title:"Season the chicken", body:"Toss shredded rotisserie chicken with minced chipotle in adobo until evenly coated. Add a squeeze of lime juice and season with salt and pepper.", tip:"Chipotle in adobo freezes well in tablespoon portions using an ice cube tray." },
+      { title:"Warm the base", body:"Microwave farro and black beans together for 60–90 seconds until warmed through.", tip:"Cook a full farro batch on Sunday — the heavy lifting is done for the week." },
+      { title:"Build the bowl", body:"Spoon farro and black beans into a bowl. Top with chipotle chicken, corn, and pickled jalapeños." },
+      { title:"Finish and serve", body:"Drizzle sour cream or Greek yogurt thinned with a little lime juice over the top. Scatter cotija cheese and cilantro. Squeeze remaining lime over everything." },
+    ],
+    prepNotes: [
+      "Cook a full farro batch Sunday, portion with black beans into containers — just add protein and toppings each day.",
+      "No reheating needed if eating at room temperature.",
+      "Chipotle in adobo freezes perfectly in tablespoon portions in an ice cube tray.",
+      "Keep cotija, cilantro, and the yogurt drizzle in a small side container so they stay fresh.",
+    ],
+  },
+  {
+    id: "harissa-salmon",
+    name: "Harissa Salmon with Lentils & Roasted Red Pepper",
+    meal: "dinner",
+    emoji: "🐟",
+    thumbBg: "#eaf2fb",
+    description: "North African-inspired seared salmon over smoky lentils with roasted red peppers, cumin, and lemon. Bold and fast.",
+    tags: ["Mediterranean","Lentils","Roasted Pepper","Gluten-Free","fish"],
+    calories: 400, protein: 42, fiber: 10, time: "18m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Salmon fillet, skin-on preferred",     amount:5,    unit:"oz",    category:"Protein" },
+      { name:"Harissa paste",                        amount:1,    unit:"tsp",   category:"Flavor"  },
+      { name:"Canned lentils, drained & rinsed",     amount:0.5,  unit:"cup",   category:"Legume"  },
+      { name:"Roasted red peppers (jarred), sliced", amount:0.25, unit:"cup",   category:"Veg"     },
+      { name:"Smoked paprika",                       amount:0.5,  unit:"tsp",   category:"Pantry"  },
+      { name:"Garlic, minced",                       amount:1,    unit:"clove", category:"Flavor"  },
+      { name:"Olive oil",                            amount:0.5,  unit:"tbsp",  category:"Pantry"  },
+      { name:"Lemon",                                amount:0.5,  unit:"",      category:"Flavor"  },
+      { name:"Fresh parsley, roughly chopped",       amount:1,    unit:"tbsp",  category:"Herb"    },
+      { name:"Ground cumin",                         amount:0.5,  unit:"tsp",   category:"Pantry"  },
+      { name:"Salt and black pepper",                amount:1,    unit:"pinch", category:"Pantry"  },
+      { name:"Plain Greek yogurt (optional)",        amount:1,    unit:"tbsp",  category:"Dairy"   },
+    ],
+    steps: [
+      { title:"Coat the salmon", body:"Pat salmon dry with paper towels. Rub harissa paste evenly over the flesh side. Season with salt and pepper and set aside while you prep the lentils." },
+      { title:"Build the lentil base", body:"Heat half the olive oil in a skillet over medium heat. Add garlic, smoked paprika, and cumin. Cook for 60 seconds until fragrant.", tip:"Don't rush — blooming the spices in oil is what gives the lentils their depth." },
+      { title:"Warm the lentils", body:"Add lentils and roasted red peppers. Stir and cook 3–4 minutes until warmed through. Squeeze in half the lemon juice, taste and adjust seasoning. Transfer to a bowl and keep warm." },
+      { title:"Sear the salmon", body:"Wipe the skillet and heat remaining olive oil over medium-high until shimmering. Place salmon flesh-side down and sear 4 minutes without moving. Flip and cook skin-side down another 3–4 minutes until cooked through.", tip:"Resist moving the salmon during the first 4 minutes — this builds the crust." },
+      { title:"Plate and serve", body:"Spoon lentils into a bowl. Place salmon on top. Squeeze remaining lemon over everything, scatter parsley, and add a dollop of Greek yogurt if using." },
+    ],
+    prepNotes: [
+      "Make all 5 lentil portions on Sunday and refrigerate — they reheat in 2 minutes.",
+      "Sear salmon fresh each evening — only 8 minutes and far better than reheated.",
+      "Harissa brands vary in heat: Mina is mild-medium; NY Shuk runs hot. Adjust to taste.",
+      "Greek yogurt adds a cooling contrast to the spice — worth the extra step.",
+    ],
+  },
+  {
+    id: "teriyaki-chicken-rice-bowl",
+    name: "Teriyaki Chicken & Brown Rice Bowl",
+    meal: "lunch",
+    emoji: "🍱",
+    thumbBg: "#fff3ea",
+    description: "Juicy soy-glazed chicken breast over fluffy brown rice with protein-packed edamame and crispy roasted broccoli.",
+    tags: ["Asian-Inspired","Brown Rice","Edamame","Broccoli","Dairy-Free","chicken"],
+    calories: 470, protein: 46, fiber: 10, time: "30m",
+    baseServings: 1,
+    ingredients: [
+      { name: "Chicken breasts",                 amount: 5,    unit: "oz",    category: "Protein" },
+      { name: "Cooked brown rice",               amount: 0.5,  unit: "cup",   category: "Grain"   },
+      { name: "Shelled edamame (frozen)",        amount: 0.5,  unit: "cup",   category: "Legume"  },
+      { name: "Broccoli florets",                amount: 1,    unit: "cup",   category: "Veg"     },
+      { name: "Teriyaki sauce",                  amount: 2,    unit: "tbsp",  category: "Flavor"  },
+      { name: "Sesame oil",                      amount: 1,    unit: "tsp",   category: "Pantry"  },
+      { name: "Garlic powder",                   amount: 0.5,  unit: "tsp",   category: "Pantry"  },
+      { name: "Sesame seeds",                    amount: 1,    unit: "tsp",   category: "Pantry"  },
+      { name: "Green onions, sliced",            amount: 2,    unit: "tbsp",  category: "Herb"    },
+      { name: "Low-sodium soy sauce (optional)", amount: 1,    unit: "tsp",   category: "Flavor"  },
+      { name: "Salt and black pepper",           amount: 1,    unit: "pinch", category: "Pantry"  },
+    ],
+    steps: [
+      { title: "Preheat & prep", body: "Preheat oven to 400°F. Cut broccoli into florets and toss with ½ tsp sesame oil, salt, and pepper. Spread on a foil-lined baking sheet.", tip: "Use the same sheet pan for both broccoli and chicken to minimize dishes." },
+      { title: "Roast chicken & broccoli", body: "Season chicken breasts with garlic powder, salt, and a drizzle of sesame oil. Place on the sheet pan. Roast everything at 400°F for 20–22 minutes until chicken reaches 165°F internally and broccoli edges are crispy.", tip: "Pound chicken breasts to even thickness so they cook at the same rate." },
+      { title: "Cook the rice", body: "While the oven runs, cook brown rice per package directions (35–40 min stovetop or 22 min Instant Pot). Spread on a sheet pan to cool quickly before portioning." },
+      { title: "Prepare edamame", body: "Microwave frozen shelled edamame per package directions (usually 3–4 min). Season with a pinch of salt." },
+      { title: "Glaze the chicken", body: "Let chicken rest 5 minutes, then slice or cube. Toss with teriyaki sauce in a bowl until fully coated.", tip: "Store a small container of extra teriyaki sauce on the side to refresh each serving." },
+      { title: "Assemble & portion", body: "Divide rice among 5 containers. Add roasted broccoli and edamame. Top with teriyaki chicken, scatter sesame seeds and sliced green onion." },
+    ],
+    prepNotes: [
+      "Cook the full batch of brown rice Sunday — it keeps 5 days refrigerated and reheats perfectly with a splash of water.",
+      "Chicken in teriyaki sauce stays moist in the fridge; the sauce acts as a brine throughout the week.",
+      "Edamame adds ~6g protein per serving on its own — don't skip it.",
+      "For crispier broccoli on day 4–5, reheat in an air fryer at 375°F for 3 minutes instead of microwaving.",
+      "Store sesame seeds and green onion separately in a small zip bag to sprinkle fresh each day.",
+    ],
+  },
+  {
+    id: "lemon-herb-tilapia-chickpeas",
+    name: "Baked Lemon Herb Tilapia with Chickpeas & Spinach",
+    meal: "dinner",
+    emoji: "🐟",
+    thumbBg: "#eaf2fb",
+    description: "Flaky baked tilapia rested on smoky pan-crisped chickpeas with wilted spinach and cherry tomatoes, finished with bright lemon and parsley.",
+    tags: ["Mediterranean","Chickpeas","Spinach","Gluten-Free","Dairy-Free","fish"],
+    calories: 395, protein: 43, fiber: 11, time: "25m",
+    baseServings: 1,
+    ingredients: [
+      { name: "Tilapia fillet",                      amount: 6,    unit: "oz",     category: "Protein" },
+      { name: "Canned chickpeas, drained & rinsed", amount: 0.5,  unit: "cup",    category: "Legume"  },
+      { name: "Baby spinach",                       amount: 2,    unit: "cups",   category: "Veg"     },
+      { name: "Cherry tomatoes, halved",            amount: 0.25, unit: "cup",    category: "Veg"     },
+      { name: "Garlic, minced",                     amount: 2,    unit: "cloves", category: "Flavor"  },
+      { name: "Olive oil",                          amount: 1,    unit: "tbsp",   category: "Pantry"  },
+      { name: "Lemon",                              amount: 0.5,  unit: "",       category: "Flavor"  },
+      { name: "Smoked paprika",                     amount: 1,    unit: "tsp",    category: "Pantry"  },
+      { name: "Ground cumin",                       amount: 0.5,  unit: "tsp",    category: "Pantry"  },
+      { name: "Red pepper flakes",                  amount: 0.25, unit: "tsp",    category: "Pantry"  },
+      { name: "Fresh flat-leaf parsley, chopped",   amount: 1,    unit: "tbsp",   category: "Herb"    },
+      { name: "Salt and black pepper",              amount: 1,    unit: "pinch",  category: "Pantry"  },
+    ],
+    steps: [
+      { title: "Preheat & season the tilapia", body: "Preheat oven to 400°F. Pat tilapia fillets completely dry with paper towels. Place on a foil-lined baking sheet. Drizzle with ½ tbsp olive oil per fillet, season with smoked paprika, cumin, salt, and pepper.", tip: "Drying the fish removes surface moisture so it bakes rather than steams, giving a firmer, more flavorful result." },
+      { title: "Bake the tilapia", body: "Bake for 10–12 minutes until the fish flakes easily with a fork and is opaque all the way through. Immediately squeeze half a lemon over the fillets as they come out of the oven." },
+      { title: "Crisp the chickpeas", body: "While cod bakes, heat olive oil in a large skillet over medium-high heat. Add drained chickpeas in a single layer. Cook undisturbed for 3–4 minutes until the bottoms are golden, then stir and cook another 2 minutes.", tip: "Resist the urge to stir early — letting them sit builds the crispy exterior." },
+      { title: "Build the base", body: "Reduce heat to medium. Push chickpeas to one side, add garlic and red pepper flakes, cook 30 seconds. Add cherry tomatoes and cook 2 minutes until blistered. Add spinach and toss until wilted, about 2 minutes. Season with salt and pepper." },
+      { title: "Plate and finish", body: "Spoon the chickpea-spinach mixture into bowls or prep containers. Lay baked cod on top. Scatter fresh parsley and squeeze remaining lemon over everything." },
+    ],
+    prepNotes: [
+      "Batch-bake all 5 tilapia portions at once on Sunday — 10–12 minutes total, one pan.",
+      "The chickpea-spinach base can be fully batch-cooked and portioned — it reheats in 90 seconds in the microwave.",
+      "Reheat cod gently: add a small splash of water to the container and microwave covered at 60% power for 90 seconds.",
+      "Chickpeas are the fiber workhorse here (~7g per ½ cup) — don't reduce the portion.",
+      "Store fresh parsley and lemon wedges on the side; a fresh squeeze each day makes a real difference.",
+    ],
+  },
+  {
+    id: "smoky-turkey-quinoa-bowl",
+    name: "Smoky Ground Turkey & Quinoa Power Bowl",
+    meal: "lunch",
+    emoji: "🥙",
+    thumbBg: "#fff3ea",
+    description: "Mediterranean-spiced ground turkey over fluffy quinoa with oven-roasted sweet potato, wilted spinach, and crumbled feta.",
+    tags: ["Mediterranean","Quinoa","Sweet Potato","Gluten-Free","Batch Cook"],
+    calories: 460, protein: 44, fiber: 8, time: "35m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Ground turkey, 93% lean",        amount:5,    unit:"oz",     category:"Protein" },
+      { name:"Quinoa, dry",                    amount:0.33, unit:"cup",    category:"Grain"   },
+      { name:"Sweet potato, diced 1/2-inch",   amount:0.5,  unit:"cup",    category:"Veg"     },
+      { name:"Baby spinach",                   amount:1.5,  unit:"cups",   category:"Veg"     },
+      { name:"Red onion, diced",               amount:0.25, unit:"cup",    category:"Veg"     },
+      { name:"Feta cheese, crumbled",          amount:2,    unit:"tbsp",   category:"Dairy"   },
+      { name:"Garlic, minced",                 amount:2,    unit:"cloves", category:"Flavor"  },
+      { name:"Olive oil",                      amount:1,    unit:"tbsp",   category:"Pantry"  },
+      { name:"Smoked paprika",                 amount:0.5,  unit:"tsp",    category:"Pantry"  },
+      { name:"Ground cumin",                   amount:0.5,  unit:"tsp",    category:"Pantry"  },
+      { name:"Dried oregano",                  amount:0.25, unit:"tsp",    category:"Pantry"  },
+      { name:"Lemon",                          amount:0.25, unit:"",       category:"Flavor"  },
+      { name:"Salt and black pepper",          amount:1,    unit:"pinch",  category:"Pantry"  },
+    ],
+    steps: [
+      { title:"Roast the sweet potato", body:"Preheat oven to 425°F. Dice sweet potatoes into ½-inch cubes. Toss with ½ tbsp olive oil, smoked paprika, salt, and pepper. Roast 20–22 minutes, flipping halfway, until caramelized at the edges.", tip:"Cut cubes small and even so they caramelize rather than steam." },
+      { title:"Cook the quinoa", body:"Combine dry quinoa with water at a 1:2 ratio. Bring to a boil, reduce to a simmer, cover, and cook 15 minutes. Rest 5 minutes off heat, then fluff with a fork.", tip:"Toast the dry quinoa in the pot for 2 minutes before adding water — it deepens the nutty flavor." },
+      { title:"Brown the turkey", body:"Heat olive oil in a large skillet over medium-high. Add red onion and cook 2–3 minutes. Add garlic, cook 30 seconds. Add ground turkey, breaking apart. Cook 7–8 minutes until browned. Add paprika, cumin, and oregano. Season and squeeze lemon juice over.", tip:"Don't stir too often — letting turkey sit builds flavorful browned bits." },
+      { title:"Wilt the spinach", body:"Push turkey to one side. Add spinach in batches, tossing with tongs until fully wilted, about 2 minutes. Fold into turkey." },
+      { title:"Assemble and portion", body:"Divide quinoa among 5 containers. Top with turkey-spinach and roasted sweet potato. Crumble feta over each. Seal and refrigerate.", tip:"Keep a lemon wedge in each container — a fresh squeeze before eating brightens everything." },
+    ],
+    prepNotes: [
+      "Everything batch-cooks Sunday in under 35 minutes — quinoa, turkey, and sweet potato run simultaneously.",
+      "Keeps 5 days refrigerated. Reheat 90 seconds covered with a damp paper towel.",
+      "Feta is salty — hold off on extra salt until you taste after adding the cheese.",
+      "For variety mid-week, swap feta for a drizzle of tahini or a spoon of hummus.",
+    ],
+  },
+  {
+    id: "thai-basil-beef-stir-fry",
+    name: "Thai Basil Beef Stir-Fry (Pad Kra Pao)",
+    meal: "dinner",
+    emoji: "🥩",
+    thumbBg: "#eaf2fb",
+    description: "Quick-seared lean ground beef with garlic, Thai chilies, and oyster-fish sauce glaze, finished with fragrant basil and green beans. Served over jasmine rice with a fried egg.",
+    tags: ["Thai","Jasmine Rice","Green Beans","Dairy-Free","Fresh-Cook","beef"],
+    calories: 445, protein: 40, fiber: 6, time: "20m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Lean ground beef, 90/10",        amount:5,    unit:"oz",     category:"Protein" },
+      { name:"Jasmine rice, dry",              amount:0.33, unit:"cup",    category:"Grain"   },
+      { name:"Egg, large",                     amount:1,    unit:"",       category:"Protein" },
+      { name:"Green beans, trimmed",           amount:0.5,  unit:"cup",    category:"Veg"     },
+      { name:"Thai basil (or Italian basil)",  amount:0.25, unit:"cup",    category:"Herb"    },
+      { name:"Garlic, minced",                 amount:3,    unit:"cloves", category:"Flavor"  },
+      { name:"Thai chili or serrano, sliced",  amount:1,    unit:"",       category:"Flavor"  },
+      { name:"Oyster sauce",                   amount:1,    unit:"tbsp",   category:"Flavor"  },
+      { name:"Fish sauce",                     amount:1,    unit:"tbsp",   category:"Flavor"  },
+      { name:"Low-sodium soy sauce",           amount:1,    unit:"tsp",    category:"Flavor"  },
+      { name:"Sugar",                          amount:0.5,  unit:"tsp",    category:"Pantry"  },
+      { name:"Vegetable oil",                  amount:1,    unit:"tbsp",   category:"Pantry"  },
+      { name:"Salt and black pepper",          amount:1,    unit:"pinch",  category:"Pantry"  },
+    ],
+    steps: [
+      { title:"Cook the rice", body:"Rinse jasmine rice until water runs clear. Cook per package directions (1 cup rice : 1½ cups water — boil, cover, simmer 15 min, rest 5 min). Fluff. A full batch can be cooked Sunday.", tip:"Day-old refrigerated rice is ideal — it stir-fries up less sticky." },
+      { title:"Mix the sauce", body:"In a small bowl, stir together oyster sauce, fish sauce, soy sauce, and sugar until sugar dissolves. Set aside." },
+      { title:"Blanch the green beans", body:"Bring a small pot of salted water to a boil. Add green beans and cook 2 minutes until bright green. Drain and set aside.", tip:"Blanch all green beans Sunday and refrigerate — adds under a minute to each night's cook." },
+      { title:"Stir-fry the beef", body:"Heat vegetable oil in a wok over high heat until shimmering. Add garlic and chili, stir-fry 20 seconds. Add ground beef, breaking into pieces. Cook 4–5 minutes until browned with crispy edges.", tip:"High heat is essential for wok char. Don't crowd the pan." },
+      { title:"Add sauce, beans, and basil", body:"Pour sauce over beef and toss to coat. Add green beans and stir-fry 1 minute. Remove from heat and fold in basil leaves." },
+      { title:"Fry the egg", body:"In a separate pan, heat a splash of oil over medium-high. Fry egg until whites are set but yolk is still runny, about 2 minutes.", tip:"A runny yolk mixes into the rice like a sauce — don't skip it." },
+      { title:"Plate and serve", body:"Spoon rice into a bowl, top with beef stir-fry, and set the fried egg on top. Serve immediately." },
+    ],
+    prepNotes: [
+      "Cook the full jasmine rice batch Sunday — it keeps all week and is better the next day for stir-fry.",
+      "Blanch all green beans Sunday — each night's dinner is under 10 minutes if rice is ready.",
+      "Mix 5 servings of sauce into a small jar Sunday for fast weeknight assembly.",
+      "Cook the beef fresh nightly — only 5–6 minutes and dramatically better than reheated.",
+      "If Thai basil is unavailable, Italian basil works; holy basil is most authentic and found at Asian markets.",
+    ],
+  },
+  {
+    id: "greek-shrimp-orzo",
+    name: "Greek Shrimp Orzo with Spinach, Olives & Feta",
+    meal: "lunch",
+    emoji: "🍤",
+    thumbBg: "#fff3ea",
+    description: "Juicy sautéed shrimp tossed with tender orzo, wilted spinach, briny kalamata olives, cherry tomatoes, and crumbled feta in a bright lemon-garlic dressing.",
+    tags: ["Greek","Orzo","Kalamata Olives","Feta","Batch Cook","shrimp"],
+    calories: 440, protein: 39, fiber: 7, time: "25m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Large shrimp, peeled & deveined",         amount:5,    unit:"oz",     category:"Protein" },
+      { name:"Orzo pasta, dry",                         amount:0.5,  unit:"cup",    category:"Grain"   },
+      { name:"Baby spinach",                            amount:2,    unit:"cups",   category:"Veg"     },
+      { name:"Cherry tomatoes, halved",                 amount:0.25, unit:"cup",    category:"Veg"     },
+      { name:"Kalamata olives, pitted & halved",        amount:0.25, unit:"cup",    category:"Flavor"  },
+      { name:"Feta cheese, crumbled",                   amount:2,    unit:"tbsp",   category:"Dairy"   },
+      { name:"Garlic, minced",                          amount:2,    unit:"cloves", category:"Flavor"  },
+      { name:"Olive oil",                               amount:0.5,  unit:"tbsp",   category:"Pantry"  },
+      { name:"Lemon",                                   amount:0.5,  unit:"",       category:"Flavor"  },
+      { name:"Dried oregano",                           amount:0.25, unit:"tsp",    category:"Pantry"  },
+      { name:"Red pepper flakes",                       amount:0.25, unit:"tsp",    category:"Pantry"  },
+      { name:"Fresh flat-leaf parsley, chopped",        amount:1,    unit:"tbsp",   category:"Herb"    },
+      { name:"Salt and black pepper",                   amount:1,    unit:"pinch",  category:"Pantry"  },
+    ],
+    steps: [
+      { title:"Cook the orzo", body:"Bring a large pot of salted water to a boil. Add orzo and cook 8–9 minutes until al dente. Drain and rinse briefly with cold water. Toss with ½ tsp olive oil to prevent sticking.", tip:"Slightly undercook the orzo — it continues absorbing dressing as it chills and softens perfectly by lunchtime." },
+      { title:"Make the lemon-garlic dressing", body:"Whisk together olive oil, fresh lemon juice, minced garlic, dried oregano, red pepper flakes, salt, and pepper in a small bowl. Taste — it should be bright and assertively seasoned.", tip:"Make the full 5-serving dressing batch at once and store in a jar in the fridge." },
+      { title:"Wilt the spinach", body:"Heat a splash of olive oil in a large skillet over medium heat. Add baby spinach in batches, tossing until just wilted, about 2 minutes. Season lightly with salt. Transfer to a bowl with the cooled orzo." },
+      { title:"Sauté the shrimp", body:"Increase heat to medium-high. Add a drizzle of olive oil, then place shrimp in a single layer. Season with salt and pepper. Cook 2 minutes per side until pink and just curled.", tip:"Shrimp are done when they curl into a 'C' shape and turn opaque. An 'O' shape means overcooked — remove from heat immediately." },
+      { title:"Combine and dress", body:"Add cooked shrimp, cherry tomatoes, and kalamata olives to the orzo-spinach bowl. Pour the lemon-garlic dressing over everything and toss gently until fully coated." },
+      { title:"Portion and finish", body:"Divide evenly among 5 meal prep containers. Top each with crumbled feta and chopped fresh parsley. Seal and refrigerate.", tip:"Add a small lemon wedge to each container — a fresh squeeze before eating makes a big difference on day 3+." },
+    ],
+    prepNotes: [
+      "The orzo base fully batch-cooks Sunday in about 20 minutes — store portioned, then add shrimp cold or cook fresh each day.",
+      "All 5 servings of shrimp cook in 8 minutes total — batch Sunday for convenience, or fresh each day for the best texture.",
+      "This dish is excellent served cold — no reheating required. If you prefer warm, microwave at 60% power for 90 seconds.",
+      "Store feta separately if you want it to stay crumbly — it softens when mixed in for multiple days.",
+      "Kalamata olives add healthy fats and brininess — don't reduce the quantity.",
+    ],
+  },
+  {
+    id: "korean-gochujang-chicken-bok-choy",
+    name: "Korean Gochujang Chicken Thighs with Sesame Bok Choy",
+    meal: "dinner",
+    emoji: "🍗",
+    thumbBg: "#eaf2fb",
+    description: "Sticky-sweet gochujang-glazed chicken thighs seared until caramelized, served with sesame-charred bok choy and fluffy jasmine rice. Bold, spicy, and packed with umami — ready in 15 minutes nightly.",
+    tags: ["Korean","Gochujang","Bok Choy","Jasmine Rice","Dairy-Free","Fresh-Cook","chicken"],
+    calories: 430, protein: 38, fiber: 5, time: "15m",
+    baseServings: 1,
+    ingredients: [
+      { name:"Boneless skinless chicken thighs",        amount:5,    unit:"oz",     category:"Protein" },
+      { name:"Jasmine rice, dry",                       amount:0.33, unit:"cup",    category:"Grain"   },
+      { name:"Baby bok choy, halved lengthwise",        amount:2,    unit:"cups",   category:"Veg"     },
+      { name:"Gochujang paste",                         amount:1,    unit:"tbsp",   category:"Flavor"  },
+      { name:"Low-sodium soy sauce",                    amount:1,    unit:"tsp",    category:"Flavor"  },
+      { name:"Honey",                                   amount:1,    unit:"tsp",    category:"Pantry"  },
+      { name:"Sesame oil",                              amount:0.5,  unit:"tsp",    category:"Pantry"  },
+      { name:"Garlic, minced",                          amount:1,    unit:"clove",  category:"Flavor"  },
+      { name:"Fresh ginger, grated",                    amount:0.5,  unit:"tsp",    category:"Flavor"  },
+      { name:"Vegetable oil",                           amount:1,    unit:"tsp",    category:"Pantry"  },
+      { name:"Sesame seeds",                            amount:1,    unit:"tsp",    category:"Pantry"  },
+      { name:"Green onions, sliced",                    amount:2,    unit:"tbsp",   category:"Herb"    },
+      { name:"Salt and black pepper",                   amount:1,    unit:"pinch",  category:"Pantry"  },
+    ],
+    steps: [
+      { title:"Cook the jasmine rice (Sunday batch)", body:"Rinse rice until water runs clear. Combine with water at 1:1.5 ratio. Bring to a boil, cover, reduce to lowest heat, cook 15 minutes. Rest 5 minutes covered. Fluff and refrigerate for the week.", tip:"Day-old refrigerated rice reheats evenly and doesn't clump — one Sunday task that pays off all week." },
+      { title:"Mix the gochujang glaze (Sunday batch)", body:"Whisk together gochujang, soy sauce, honey, sesame oil, minced garlic, and grated ginger until smooth. Store in a jar in the fridge.", tip:"Pre-mixing all 5 servings of glaze Sunday means zero prep work each weeknight." },
+      { title:"Sear the chicken thighs", body:"Pat chicken completely dry with paper towels — critical for a proper sear. Season with salt. Heat vegetable oil in a skillet over medium-high until shimmering. Cook 5–6 minutes per side until cooked through (165°F). Rest 2 minutes before slicing.", tip:"Completely dry chicken caramelizes instead of steaming. Don't skip the paper towel step." },
+      { title:"Glaze the chicken", body:"Reduce heat to medium-low. Pour gochujang glaze over cooked chicken and toss to coat. Cook 1–2 minutes, turning often, until the glaze thickens and becomes sticky. Watch closely — honey-based glazes can catch and burn quickly." },
+      { title:"Char the bok choy", body:"Wipe out the pan, increase to high heat, and add a splash of vegetable oil. Place bok choy cut-side down and press gently. Cook undisturbed 2–3 minutes until lightly charred. Flip, add a splash of soy sauce, cook 1 minute. Finish with a drizzle of sesame oil.", tip:"The char on the bok choy is the whole point — resist the urge to stir during those first 2–3 minutes." },
+      { title:"Plate and serve", body:"Reheat rice with a splash of water for 60 seconds. Spoon into a bowl, slice glazed chicken and arrange alongside bok choy. Scatter sesame seeds and green onions over the top. Serve immediately." },
+    ],
+    prepNotes: [
+      "Batch-cook jasmine rice Sunday — refrigerates well for 5 days and reheats in 60 seconds with a splash of water.",
+      "Mix all 5 servings of gochujang glaze in a jar Sunday — stores a week and makes weeknight cooking nearly instant.",
+      "Cook chicken and bok choy fresh each night — only 12 minutes total and far better than reheated. The glaze caramelizes beautifully.",
+      "Gochujang heat varies by brand: CJ Haechandle is medium; Bibigo runs milder. Adjust the amount to your heat preference.",
+      "Bok choy loses its char texture quickly once stored — always cook it fresh. It takes under 5 minutes.",
+    ],
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let currentFilter = "all";
+let currentSearch = "";
+let servings = {};
+let checked = {};
+
+RECIPES.forEach(r => {
+  servings[r.id] = 5;
+  checked[r.id] = new Set();
+});
+
+// ═══════════════════════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════════════════════
+function filterRecipes() {
+  currentSearch = document.getElementById("search-input").value.toLowerCase();
+  renderGrid();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById("recipe-grid");
+  const filtered = RECIPES.filter(r => {
+    const matchFilter = currentFilter === "all" || r.meal === currentFilter || r.tags.map(t=>t.toLowerCase()).includes(currentFilter);
+    const matchSearch = !currentSearch || r.name.toLowerCase().includes(currentSearch) || r.tags.some(t => t.toLowerCase().includes(currentSearch));
+    return matchFilter && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">🍽️</div><p>No recipes match your search.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(r => `
+    <div class="recipe-card" onclick="openRecipe('${r.id}')">
+      <div class="card-thumb" style="background:${r.thumbBg}">
+        <span>${r.emoji}</span>
+        <span class="card-meal-badge ${r.meal}">${r.meal === 'lunch' ? '☀️ Lunch' : '🌙 Dinner'}</span>
+      </div>
+      <div class="card-body">
+        <h3>${r.name}</h3>
+        <p>${r.description}</p>
+        <div class="card-stats">
+          <span class="card-stat">${r.calories} cal</span>
+          <span class="card-stat hi">💪 ${r.protein}g protein</span>
+          <span class="card-stat hi">🌿 ${r.fiber}g fiber</span>
+          <span class="card-stat">⏱ ${r.time}</span>
+        </div>
+        <div class="card-tags">
+          ${r.tags.filter(t=>!['chicken','fish','beef'].includes(t)).slice(0,3).map(t=>`<span class="card-tag">${t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL
+// ═══════════════════════════════════════════════════════════
+function openRecipe(id) {
+  const r = RECIPES.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById("library-view").style.display = "none";
+  const dv = document.getElementById("detail-view");
+  dv.className = "detail-view open";
+
+  const accentColor = r.meal === 'lunch' ? 'var(--accent1)' : 'var(--accent2)';
+
+  document.getElementById("detail-content").innerHTML = `
+    <div class="hero-card ${r.meal}-detail" style="margin-top:16px;">
+      <div class="meal-badge ${r.meal}">${r.meal === 'lunch' ? '☀️ Lunch' : '🌙 Dinner'}</div>
+      <h2>${r.name}</h2>
+      <p class="desc">${r.description}</p>
+      <div class="stats-row">
+        <div class="stat kcal"><div class="val">${r.calories}</div><div class="lbl">Calories</div></div>
+        <div class="stat protein"><div class="val">${r.protein}g</div><div class="lbl">Protein</div></div>
+        <div class="stat fiber"><div class="val">${r.fiber}g</div><div class="lbl">Fiber</div></div>
+        <div class="stat time"><div class="val">${r.time}</div><div class="lbl">Prep Time</div></div>
+      </div>
+      <div class="meta-tags">
+        ${r.tags.filter(t=>!['chicken','fish','beef'].includes(t)).map(t=>`<span class="meta-tag">${t}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h3>🛒 Ingredients</h3>
+      <div class="servings-control">
+        <label>Servings (meal prep containers)</label>
+        <button class="servings-btn" onclick="changeServings('${r.id}',-1)">−</button>
+        <span class="servings-count" id="srv-${r.id}">${servings[r.id]}</span>
+        <button class="servings-btn" onclick="changeServings('${r.id}',+1)">+</button>
+      </div>
+      <ul class="ingredient-list" id="ings-${r.id}"></ul>
+    </div>
+
+    <div class="section-card ${r.meal}-detail">
+      <h3>👨‍🍳 Instructions</h3>
+      <ol class="steps-list">
+        ${r.steps.map((s,i) => `
+          <li class="step">
+            <div class="step-num" style="background:${r.meal==='lunch'?'#fff3ea':'#eaf2fb'};color:${accentColor}">${i+1}</div>
+            <div>
+              <div class="step-text"><strong>${s.title}.</strong> ${s.body}</div>
+              ${s.tip ? `<span class="step-tip">Tip: ${s.tip}</span>` : ''}
+            </div>
+          </li>`).join('')}
+      </ol>
+    </div>
+
+    <div class="section-card">
+      <h3>📦 Meal Prep Notes</h3>
+      <ul class="prep-tip-list">
+        ${r.prepNotes.map(n=>`<li class="prep-tip-item">${n}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="section-card">
+      <h3>✅ Cooking Progress</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Check off ingredients as you gather them:</p>
+      <div id="prog-label-${r.id}" style="font-size:13px;font-weight:600;margin-bottom:8px;">0 / ${r.ingredients.length} items checked</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar-${r.id}" style="width:0%"></div></div>
+    </div>
+  `;
+
+  renderIngredients(r.id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showLibrary() {
+  document.getElementById("detail-view").className = "detail-view";
+  document.getElementById("library-view").style.display = "block";
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════
+// INGREDIENTS / SERVINGS
+// ═══════════════════════════════════════════════════════════
+function formatAmt(amount, mult) {
+  const val = amount * mult;
+  if (val === 0) return "—";
+  if (val % 1 === 0) return String(val);
+  const frac = val % 1, whole = Math.floor(val);
+  const fracs = {0.25:"¼",0.5:"½",0.75:"¾",0.33:"⅓",0.67:"⅔",0.125:"⅛",0.375:"⅜"};
+  const fs = fracs[Math.round(frac*8)/8] || frac.toFixed(1);
+  return whole > 0 ? `${whole} ${fs}` : fs;
+}
+
+function renderIngredients(id) {
+  const r = RECIPES.find(x => x.id === id);
+  const ul = document.getElementById(`ings-${id}`);
+  if (!ul) return;
+  const mult = servings[id] / r.baseServings;
+  ul.innerHTML = '';
+  r.ingredients.forEach((ing, i) => {
+    const isChecked = checked[id].has(i);
+    const li = document.createElement('li');
+    li.className = `ingredient-item${isChecked ? ' checked' : ''}`;
+    li.innerHTML = `
+      <input type="checkbox" ${isChecked?'checked':''} onchange="toggleCheck('${id}',${i})"/>
+      <span class="ingredient-amount">${formatAmt(ing.amount, mult)} ${ing.unit}</span>
+      <span class="ingredient-name">${ing.name}</span>
+      <span class="ingredient-cat">${ing.category}</span>`;
+    ul.appendChild(li);
+  });
+  updateProgress(id, r.ingredients.length);
+}
+
+function toggleCheck(id, idx) {
+  checked[id].has(idx) ? checked[id].delete(idx) : checked[id].add(idx);
+  renderIngredients(id);
+}
+
+function updateProgress(id, total) {
+  const n = checked[id].size, pct = total ? Math.round(n/total*100) : 0;
+  const bar = document.getElementById(`prog-bar-${id}`);
+  const lbl = document.getElementById(`prog-label-${id}`);
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = `${n} / ${total} items checked`;
+}
+
+function changeServings(id, delta) {
+  servings[id] = Math.max(1, servings[id] + delta);
+  const el = document.getElementById(`srv-${id}`);
+  if (el) el.textContent = servings[id];
+  renderIngredients(id);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+renderGrid();
+</script>
+</body>
+</html>
